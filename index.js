@@ -1,77 +1,83 @@
-
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const servers = require('./servers.json');
-
-process.on('unhandledRejection', err => {
-  console.error(err);
-});
+const fetch = require('node-fetch');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+// 👉 GANTI sesuai server (code dari cfx.re/join/xxxx)
+const SERVER_CODE = 'bak4pl';
+
+client.on('ready', () => {
+  console.log(`✅ Bot online sebagai ${client.user.tag}`);
 });
 
 client.on('messageCreate', async (msg) => {
+  if (msg.author.bot) return;
+
+  // ================= HELP =================
   if (msg.content === '!helpfinder') {
     const embed = new EmbedBuilder()
-      .setTitle('🔎 FiveM Player Finder Bot')
-      .setDescription('Cari player di berbagai server FiveM dengan cepat dan mudah.')
+      .setTitle('🔎 FiveM Player Finder')
+      .setDescription('Cari player server INDOPRIDE')
       .addFields(
-        { name: '⚡ Fast Player Search', value: 'Cari nama player secara cepat' },
-        { name: '🌐 Multi Server Finder', value: 'Scan banyak server sekaligus' },
-        { name: '🟢 Online 24/7', value: 'Bot selalu aktif' },
-        { name: '📌 Bantuan', value: '`!helpfinder`' }
+        { name: '📌 Command', value: '`!cari nama`' }
       )
       .setColor(0x00ffcc);
 
-    msg.reply({ embeds: [embed] });
+    return msg.reply({ embeds: [embed] });
   }
 
+  // ================= SEARCH =================
   if (msg.content.startsWith('!cari')) {
     const keyword = msg.content.split(' ')[1]?.toLowerCase();
-    if (!keyword) return msg.reply('Masukkan nama player!');
+    if (!keyword) return msg.reply('❌ Masukkan nama player');
 
-    let foundPlayers = [];
+    try {
+      const res = await fetch(`https://servers-frontend.fivem.net/api/servers/single/${SERVER_CODE}`);
+      const json = await res.json();
 
-    for (const server of servers) {
-      try {
-        const res = await fetch(`http://${server.ip}/players.json`);
-        const data = await res.json();
-
-        data.forEach(p => {
-          if (p.name.toLowerCase().includes(keyword)) {
-            foundPlayers.push({
-              name: p.name,
-              id: p.id,
-              ping: p.ping,
-              server: server.name
-            });
-          }
-        });
-
-      } catch (err) {
-        console.log(`Server ${server.name} error`);
+      // VALIDASI DATA
+      if (!json || !json.Data || !json.Data.players) {
+        return msg.reply('❌ Data server tidak tersedia');
       }
-    }
 
-    if (foundPlayers.length === 0) {
-      return msg.reply('❌ Player tidak ditemukan');
-    }
+      const players = json.Data.players;
 
-    const embed = new EmbedBuilder()
-      .setTitle('🎯 Target Berhasil Dilacak!')
-      .setColor(0xff0000);
+      // FILTER PLAYER
+      const found = players.filter(p =>
+        p.name && p.name.toLowerCase().includes(keyword)
+      );
 
-    foundPlayers.forEach(p => {
-      embed.addFields({
-        name: `👤 ${p.name}`,
-        value: `🆔 ID: ${p.id}\n📶 Ping: ${p.ping}ms\n🌐 Server: ${p.server}`
+      if (found.length === 0) {
+        return msg.reply('❌ Player tidak ditemukan');
+      }
+
+      // EMBED RESULT
+      const embed = new EmbedBuilder()
+        .setTitle('🎯 Player Ditemukan')
+        .setColor(0xff0000)
+        .setFooter({ text: `Total Player Online: ${players.length}` });
+
+      found.slice(0, 10).forEach(p => {
+        embed.addFields({
+          name: `👤 ${p.name}`,
+          value: `🆔 ID: ${p.id}\n📶 Ping: ${p.ping}ms`
+        });
       });
-    });
 
-    msg.reply({ embeds: [embed] });
+      msg.reply({ embeds: [embed] });
+
+    } catch (err) {
+      console.log(err);
+      msg.reply('❌ Gagal ambil data server');
+    }
   }
 });
 
-console.log("TOKEN:", process.env.TOKEN ? "ADA" : "KOSONG");
+// ================= LOGIN =================
 client.login(process.env.TOKEN);
