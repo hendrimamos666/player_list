@@ -69,4 +69,4 @@ client.on('messageCreate', async (msg) => {
   }
 });
 
-client.login('GANTI_TOKEN_DISCORD_KAMU');
+client.login(process.env.TOKEN);
