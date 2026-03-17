@@ -1,0 +1,14 @@
+
+{
+  "name": "fivem-finder-bot",
+  "version": "1.0.0",
+  "description": "FiveM Player Finder Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "node-fetch": "^2.6.7"
+  }
+}
