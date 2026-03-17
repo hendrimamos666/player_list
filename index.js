@@ -1,7 +1,11 @@
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const servers = require('./servers.json');
+
+process.on('unhandledRejection', err => {
+  console.error(err);
+});
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
@@ -69,4 +73,5 @@ client.on('messageCreate', async (msg) => {
   }
 });
 
+console.log("TOKEN:", process.env.TOKEN ? "ADA" : "KOSONG");
 client.login(process.env.TOKEN);
