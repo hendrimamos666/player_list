@@ -10,7 +10,7 @@ const client = new Client({
 });
 
 // 👉 GANTI sesuai server (code dari cfx.re/join/xxxx)
-const SERVER_CODE = 'bak4pl';
+const SERVER_CODE = '237yxy';
 
 client.on('ready', () => {
   console.log(`✅ Bot online sebagai ${client.user.tag}`);
